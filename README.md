@@ -1,28 +1,35 @@
 # XPsychometrics Research Lab Website
 
-This is the website repository for the XPsychometrics Research Lab.
+This is the official website repository for the XPsychometrics Research Lab, hosted on GitHub Pages.
 
-## Getting Started
+## Local Development
 
-1. Install Hugo:
-   ```bash
-   brew install hugo
-   ```
+To view the website locally, you can use Python's built-in HTTP server:
 
-2. Run the development server:
-   ```bash
-   hugo server
-   ```
+```bash
+# Python 3
+python3 -m http.server 8000
+```
 
-3. The website will be available at http://localhost:1313
+Then open http://localhost:8000 in your browser.
+
+## Project Structure
+
+- `index.html`: Main website page
+- `assets/`: Contains all static assets
+  - `css/`: Stylesheets
+  - `js/`: JavaScript files
+  - `images/`: Image assets
 
 ## Deployment
 
-The website is configured to deploy automatically to GitHub Pages when pushed to the `main` branch.
+The website is automatically deployed to GitHub Pages when changes are pushed to the `main` branch. The live site is available at:
 
-## Structure
+https://xpsychometrics.github.io
 
-- `content/`: Contains all the website content
-- `static/`: For static assets (images, PDFs, etc.)
-- `themes/`: Contains the Hugo theme
-- `config.toml`: Main configuration file
+## Contributing
+
+1. Fork the repository
+2. Create a new branch for your changes
+3. Make your changes
+4. Submit a pull request
