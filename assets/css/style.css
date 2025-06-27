@@ -1,4 +1,12 @@
 /* Global Styles */
+:root {
+    --umn-maroon: #8C1D40;
+    --umn-gold: #FFD700;
+    --umn-dark-maroon: #5C1125;
+    --umn-light-maroon: #A8405F;
+    --umn-light-gold: #FFE673;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
@@ -7,7 +15,7 @@ body {
 
 /* Hero Section */
 .hero-section {
-    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://source.unsplash.com/1600x900/?psychometrics');
+    background: linear-gradient(rgba(140, 29, 64, 0.9), rgba(140, 29, 64, 0.9)), url('https://source.unsplash.com/1600x900/?psychometrics');
     background-size: cover;
     background-position: center;
     color: white;
@@ -23,6 +31,7 @@ body {
 
 .card:hover {
     transform: translateY(-5px);
+    border: 2px solid var(--umn-gold);
 }
 
 /* Team Section */
@@ -34,6 +43,7 @@ body {
 .team-member img {
     border-radius: 50%;
     margin-bottom: 15px;
+    border: 3px solid var(--umn-gold);
 }
 
 /* Contact Form */
@@ -46,16 +56,56 @@ body {
 
 /* Footer */
 footer {
+    background-color: var(--umn-maroon);
+    color: white;
     margin-top: 50px;
 }
 
 footer a {
     text-decoration: none;
     transition: color 0.3s ease;
+    color: var(--umn-gold);
 }
 
 footer a:hover {
-    color: #0d6efd !important;
+    color: white !important;
+}
+
+/* Navigation */
+.navbar {
+    background-color: var(--umn-maroon) !important;
+}
+
+.navbar-brand img {
+    filter: brightness(0) invert(1);
+}
+
+.nav-link {
+    color: white !important;
+}
+
+.nav-link:hover {
+    color: var(--umn-gold) !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--umn-gold) !important;
+    border-color: var(--umn-gold) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--umn-dark-maroon) !important;
+    border-color: var(--umn-dark-maroon) !important;
+}
+
+/* Cards */
+.card {
+    border: 1px solid var(--umn-light-maroon);
+}
+
+.card:hover {
+    border-color: var(--umn-gold);
 }
 
 /* Responsive Design */
