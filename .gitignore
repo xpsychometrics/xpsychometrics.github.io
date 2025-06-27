@@ -4,13 +4,9 @@
 /themes/
 
 # Build output
-*.html
-*.css
-*.js
-*.json
-*.xml
-*.rss
-*.atom
+/public/
+/resources/
+/themes/
 
 # IDE
 .idea/
