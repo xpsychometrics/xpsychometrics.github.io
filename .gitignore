@@ -1,0 +1,23 @@
+# Hugo
+/public/
+/resources/
+/themes/
+
+# Build output
+*.html
+*.css
+*.js
+*.json
+*.xml
+*.rss
+*.atom
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
