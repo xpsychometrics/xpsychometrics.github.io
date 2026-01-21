@@ -1,4 +1,4 @@
-// Static SVG Collaboration Map with Curved Lines - US-focused projection
+// Static SVG Collaboration Map with Curved Lines - Using D3.js for accurate world map
 document.addEventListener('DOMContentLoaded', function() {
     // SVG viewBox dimensions
     const svgWidth = 1200;
@@ -13,12 +13,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const isUS = lng >= -125 && lng <= -65 && lat >= 25 && lat <= 50;
         
         if (isUS) {
-            // US-focused projection: more space for US
-            // US gets about 60% of the width
-            const usWidth = svgWidth * 0.6;
-            const usStartX = svgWidth * 0.1; // Start at 10% from left
-            const x = usStartX + ((lng + 125) / 60) * usWidth; // -125 to -65 maps to usWidth
-            const y = ((50 - lat) / 25) * (svgHeight * 0.7) + (svgHeight * 0.1); // 25-50 lat maps to 70% of height
+            // US-focused projection: more space for US with better spread
+            // US gets about 70% of the width for better spacing
+            const usWidth = svgWidth * 0.70;
+            const usStartX = svgWidth * 0.05; // Start at 5% from left
+            // Add more spread by using a wider range
+            const lngRange = 60; // -125 to -65
+            const lngOffset = lng + 125; // Normalize to 0-60
+            // Use a non-linear scaling to spread out clustered areas more
+            // Apply a slight expansion for better readability
+            const x = usStartX + (lngOffset / lngRange) * usWidth;
+            // For Y, use more of the height and add more vertical spread
+            const latRange = 25; // 25 to 50
+            const latOffset = lat - 25; // Normalize to 0-25
+            // Use more vertical space (75% of height) for better spread
+            const y = (svgHeight * 0.12) + ((latRange - latOffset) / latRange) * (svgHeight * 0.75);
             return { x, y };
         } else {
             // International locations: use remaining space
@@ -51,7 +60,6 @@ document.addEventListener('DOMContentLoaded', function() {
         { name: 'China Mainland', lat: 39.9042, lng: 116.4074, type: 'international' },
         { name: 'Taiwan', lat: 25.0330, lng: 121.5654, type: 'international' },
         { name: 'Spain', lat: 40.4168, lng: -3.7038, type: 'international' },
-        { name: 'Iran', lat: 35.6892, lng: 51.3890, type: 'international' },
         { name: 'Germany', lat: 52.5200, lng: 13.4050, type: 'international' },
         { name: 'Hong Kong', lat: 22.3193, lng: 114.1694, type: 'international' },
         { name: 'Arkansas', lat: 34.7465, lng: -92.2896, type: 'national' },
@@ -65,127 +73,20 @@ document.addEventListener('DOMContentLoaded', function() {
         { name: 'Washington', lat: 47.6062, lng: -122.3321, type: 'national' },
         { name: 'Michigan', lat: 42.3314, lng: -83.0458, type: 'national' },
         { name: 'New Jersey', lat: 40.2206, lng: -74.7597, type: 'national' },
-        { name: 'Arizona', lat: 33.4484, lng: -112.0740, type: 'national' }
+        { name: 'Arizona', lat: 33.4484, lng: -112.0740, type: 'national' },
+        { name: 'Maryland', lat: 39.0458, lng: -76.6413, type: 'national' },
+        { name: 'Virginia', lat: 37.5407, lng: -77.4360, type: 'national' },
+        { name: 'Illinois', lat: 39.7983, lng: -89.6441, type: 'national' }
     ];
     
     const svg = document.getElementById('collaborationMap');
-    if (!svg) {
-        console.error('SVG element not found');
-        return;
-    }
-    
-    const worldMapGroup = document.getElementById('world-map-background');
     const connectionsGroup = document.getElementById('connections');
     const markersGroup = document.getElementById('markers');
     
-    if (!connectionsGroup || !markersGroup || !worldMapGroup) {
-        console.error('SVG groups not found');
+    if (!svg || !connectionsGroup || !markersGroup) {
+        console.error('SVG elements not found');
         return;
     }
-    
-    // Draw world map background with more accurate continent shapes
-    // Using a helper function to create smooth paths
-    function createContinentPath(points, fillColor, strokeColor) {
-        if (points.length < 3) return;
-        
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        let pathData = '';
-        
-        points.forEach(([lat, lng], index) => {
-            const pt = latLngToSVG(lat, lng);
-            if (index === 0) {
-                pathData = `M ${pt.x} ${pt.y}`;
-            } else {
-                pathData += ` L ${pt.x} ${pt.y}`;
-            }
-        });
-        pathData += ' Z';
-        
-        path.setAttribute('d', pathData);
-        path.setAttribute('fill', fillColor);
-        path.setAttribute('stroke', strokeColor);
-        path.setAttribute('stroke-width', '1');
-        path.setAttribute('opacity', '0.35');
-        worldMapGroup.appendChild(path);
-    }
-    
-    // North America - United States (detailed outline)
-    createContinentPath([
-        [49, -125], [48.5, -124], [48, -123], [47.5, -122], [47, -121],
-        [46.5, -120], [46, -119], [45.5, -118], [45, -117], [44.5, -116],
-        [44, -115], [43.5, -114], [43, -113], [42.5, -112], [42, -111],
-        [41.5, -110], [41, -109], [40.5, -108], [40, -107], [39.5, -106],
-        [39, -105], [38.5, -104], [38, -103], [37.5, -102], [37, -101],
-        [36.5, -100], [36, -99], [35.5, -98], [35, -97], [34.5, -96],
-        [34, -95], [33.5, -94], [33, -93], [32.5, -92], [32, -91],
-        [31.5, -90], [31, -89], [30.5, -88], [30, -87], [30.5, -88],
-        [31, -89], [31.5, -90], [32, -91], [32.5, -92], [33, -93],
-        [33.5, -94], [34, -95], [34.5, -96], [35, -97], [35.5, -98],
-        [36, -99], [36.5, -100], [37, -101], [37.5, -102], [38, -103],
-        [38.5, -104], [39, -105], [39.5, -106], [40, -107], [40.5, -108],
-        [41, -109], [41.5, -110], [42, -111], [42.5, -112], [43, -113],
-        [43.5, -114], [44, -115], [44.5, -116], [45, -117], [45.5, -118],
-        [46, -119], [46.5, -120], [47, -121], [47.5, -122], [48, -123],
-        [48.5, -124]
-    ], '#b8d4f0', '#6ba3d6');
-    
-    // Canada region
-    createContinentPath([
-        [70, -140], [69, -135], [68, -130], [67, -125], [66, -120],
-        [65, -115], [64, -110], [63, -105], [62, -100], [61, -95],
-        [60, -90], [59, -95], [58, -100], [57, -105], [56, -110],
-        [55, -115], [56, -120], [57, -125], [58, -130], [59, -135],
-        [60, -140], [61, -135], [62, -130], [63, -125], [64, -130],
-        [65, -135], [66, -140], [67, -135], [68, -140]
-    ], '#b8d4f0', '#6ba3d6');
-    
-    // South America
-    createContinentPath([
-        [12, -80], [10, -78], [8, -76], [6, -74], [4, -72],
-        [2, -70], [0, -68], [-2, -66], [-4, -64], [-6, -62],
-        [-8, -60], [-10, -58], [-12, -56], [-14, -54], [-16, -52],
-        [-18, -50], [-20, -48], [-22, -46], [-24, -44], [-26, -42],
-        [-28, -40], [-26, -38], [-24, -40], [-22, -42], [-20, -44],
-        [-18, -46], [-16, -48], [-14, -50], [-12, -52], [-10, -54],
-        [-8, -56], [-6, -58], [-4, -60], [-2, -62], [0, -64],
-        [2, -66], [4, -68], [6, -70], [8, -72], [10, -74]
-    ], '#b8d4f0', '#6ba3d6');
-    
-    // Europe
-    createContinentPath([
-        [71, -10], [70, -8], [69, -6], [68, -4], [67, -2],
-        [66, 0], [65, 2], [64, 4], [63, 6], [62, 8],
-        [61, 10], [60, 12], [59, 10], [58, 8], [57, 6],
-        [56, 4], [55, 2], [54, 0], [53, -2], [52, -4],
-        [51, -6], [52, -8], [53, -10], [54, -8], [55, -6],
-        [56, -4], [57, -2], [58, 0], [59, 2], [60, 4],
-        [61, 6], [62, 4], [63, 2], [64, 0], [65, -2],
-        [66, -4], [67, -6], [68, -8]
-    ], '#d4c5a9', '#b8a082');
-    
-    // Asia - China Mainland
-    createContinentPath([
-        [50, 75], [49, 80], [48, 85], [47, 90], [46, 95],
-        [45, 100], [44, 105], [43, 110], [42, 115], [41, 120],
-        [40, 125], [39, 120], [38, 115], [37, 110], [36, 105],
-        [35, 100], [36, 95], [37, 90], [38, 85], [39, 80],
-        [40, 75], [41, 78], [42, 80], [43, 82], [44, 84],
-        [45, 86], [46, 88], [47, 90], [48, 88], [49, 86]
-    ], '#d4c5a9', '#b8a082');
-    
-    // Middle East / Iran
-    createContinentPath([
-        [42, 44], [41, 46], [40, 48], [39, 50], [38, 52],
-        [37, 50], [36, 48], [35, 46], [34, 44], [33, 42],
-        [34, 40], [35, 42], [36, 44], [37, 46], [38, 48],
-        [39, 46], [40, 44]
-    ], '#d4c5a9', '#b8a082');
-    
-    // Taiwan / Hong Kong region
-    createContinentPath([
-        [25, 118], [24, 120], [23, 122], [22, 124], [21, 126],
-        [22, 128], [23, 126], [24, 124]
-    ], '#d4c5a9', '#b8a082');
     
     // Draw curved lines from Minneapolis to each location
     collaborations.forEach(collab => {
@@ -230,18 +131,66 @@ document.addEventListener('DOMContentLoaded', function() {
         circle.setAttribute('stroke-width', '2.5');
         markersGroup.appendChild(circle);
         
-        // Add location label
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', targetSVG.x);
-        text.setAttribute('y', targetSVG.y - 15);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('font-size', '11');
-        text.setAttribute('font-weight', 'bold');
-        text.setAttribute('fill', color);
-        text.setAttribute('font-family', 'Arial, sans-serif');
-        text.textContent = collab.name;
-        markersGroup.appendChild(text);
+        // Store position for overlap detection
+        collab.svgX = targetSVG.x;
+        collab.svgY = targetSVG.y;
+        
+        // Add hover effects to circle
+        circle.setAttribute('class', 'collaboration-marker');
+        circle.setAttribute('data-location', collab.name);
+        circle.style.cursor = 'pointer';
+        
+        // Hover effect - slightly enlarge marker
+        circle.addEventListener('mouseenter', function() {
+            circle.setAttribute('r', (collab.type === 'international' ? '9' : '8'));
+        });
+        
+        circle.addEventListener('mouseleave', function() {
+            circle.setAttribute('r', (collab.type === 'international' ? '7' : '6'));
+        });
     });
+    
+    // Function to find optimal label position to avoid overlaps
+    function findLabelPosition(x, y, existingLabels, labelText) {
+        const minDistance = 50; // Minimum distance between labels
+        const offsets = [
+            { x: 0, y: -20, anchor: 'middle' },  // Above
+            { x: 25, y: 0, anchor: 'start' },     // Right
+            { x: -25, y: 0, anchor: 'end' },     // Left
+            { x: 0, y: 20, anchor: 'middle' },   // Below
+            { x: 30, y: -15, anchor: 'start' },  // Top-right
+            { x: -30, y: -15, anchor: 'end' },    // Top-left
+            { x: 30, y: 15, anchor: 'start' },   // Bottom-right
+            { x: -30, y: 15, anchor: 'end' }     // Bottom-left
+        ];
+        
+        for (let offset of offsets) {
+            const testX = x + offset.x;
+            const testY = y + offset.y;
+            let tooClose = false;
+            
+            // Check distance from existing labels
+            for (let existing of existingLabels) {
+                const distance = Math.sqrt(
+                    Math.pow(testX - existing.x, 2) + Math.pow(testY - existing.y, 2)
+                );
+                if (distance < minDistance) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            
+            if (!tooClose) {
+                return { x: testX, y: testY, anchor: offset.anchor };
+            }
+        }
+        
+        // If all positions are too close, use the first offset anyway
+        return { x: x + offsets[0].x, y: y + offsets[0].y, anchor: offsets[0].anchor };
+    }
+    
+    // Store all label positions
+    const labelPositions = [];
     
     // Add Minneapolis marker (larger, different style)
     const minneapolisCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -251,6 +200,8 @@ document.addEventListener('DOMContentLoaded', function() {
     minneapolisCircle.setAttribute('fill', '#8C1D40');
     minneapolisCircle.setAttribute('stroke', '#FFD700');
     minneapolisCircle.setAttribute('stroke-width', '4');
+    minneapolisCircle.setAttribute('class', 'collaboration-marker');
+    minneapolisCircle.style.cursor = 'pointer';
     markersGroup.appendChild(minneapolisCircle);
     
     // Add inner circle for Minneapolis
@@ -261,15 +212,51 @@ document.addEventListener('DOMContentLoaded', function() {
     minneapolisInner.setAttribute('fill', '#FFD700');
     markersGroup.appendChild(minneapolisInner);
     
-    // Add Minneapolis label
+    // Add Minneapolis label with smart positioning
+    const minneapolisLabelPos = findLabelPosition(minneapolisSVG.x, minneapolisSVG.y, labelPositions, 'Minneapolis, MN');
+    labelPositions.push({ x: minneapolisLabelPos.x, y: minneapolisLabelPos.y });
+    
     const minneapolisText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    minneapolisText.setAttribute('x', minneapolisSVG.x);
-    minneapolisText.setAttribute('y', minneapolisSVG.y - 20);
-    minneapolisText.setAttribute('text-anchor', 'middle');
-    minneapolisText.setAttribute('font-size', '14');
+    minneapolisText.setAttribute('x', minneapolisLabelPos.x);
+    minneapolisText.setAttribute('y', minneapolisLabelPos.y);
+    minneapolisText.setAttribute('text-anchor', minneapolisLabelPos.anchor);
+    minneapolisText.setAttribute('font-size', '13');
     minneapolisText.setAttribute('font-weight', 'bold');
     minneapolisText.setAttribute('fill', '#8C1D40');
     minneapolisText.setAttribute('font-family', 'Arial, sans-serif');
+    minneapolisText.setAttribute('class', 'location-label');
     minneapolisText.textContent = 'Minneapolis, MN';
     markersGroup.appendChild(minneapolisText);
+    
+    // Hover effect for Minneapolis
+    minneapolisCircle.addEventListener('mouseenter', function() {
+        minneapolisCircle.setAttribute('r', '12');
+    });
+    
+    minneapolisCircle.addEventListener('mouseleave', function() {
+        minneapolisCircle.setAttribute('r', '10');
+    });
+    
+    // Now add labels for all collaboration locations
+    collaborations.forEach(collab => {
+        const targetSVG = { x: collab.svgX, y: collab.svgY };
+        const color = collab.type === 'international' ? '#FFD700' : '#8C1D40';
+        
+        // Find optimal label position
+        const labelPos = findLabelPosition(targetSVG.x, targetSVG.y, labelPositions, collab.name);
+        labelPositions.push({ x: labelPos.x, y: labelPos.y });
+        
+        // Add location label
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', labelPos.x);
+        text.setAttribute('y', labelPos.y);
+        text.setAttribute('text-anchor', labelPos.anchor);
+        text.setAttribute('font-size', '11');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('fill', color);
+        text.setAttribute('font-family', 'Arial, sans-serif');
+        text.setAttribute('class', 'location-label');
+        text.textContent = collab.name;
+        markersGroup.appendChild(text);
+    });
 });
