@@ -19,7 +19,14 @@ body {
     background-size: cover;
     background-position: center;
     color: white;
-    padding: 100px 0;
+    padding: 60px 0;
+}
+
+.panda-highlight {
+    color: var(--umn-gold);
+    font-weight: bold;
+    font-size: 1.1em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Cards */
@@ -76,8 +83,21 @@ footer a:hover {
     background-color: var(--umn-maroon) !important;
 }
 
+.navbar-brand {
+    transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.05);
+}
+
 .navbar-brand img {
-    filter: brightness(0) invert(1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover img {
+    transform: rotate(-5deg) scale(1.1);
 }
 
 .nav-link {
@@ -106,6 +126,73 @@ footer a:hover {
 
 .card:hover {
     border-color: var(--umn-gold);
+}
+
+/* Publications */
+.publication-item {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.publication-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.publication-item a {
+    color: var(--umn-maroon);
+    text-decoration: none;
+}
+
+.publication-item a:hover {
+    color: var(--umn-dark-maroon);
+    text-decoration: underline;
+}
+
+/* Collaboration Map */
+.collaboration-map-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.collaboration-map {
+    width: 100%;
+    height: 600px;
+    background: transparent;
+    display: block;
+    min-height: 500px;
+}
+
+.collaboration-map path,
+.collaboration-map circle {
+    transition: opacity 0.3s ease;
+}
+
+.collaboration-map circle:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.collaboration-map text {
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .collaboration-map {
+        height: 450px;
+        min-height: 400px;
+    }
+    
+    .collaboration-map text {
+        font-size: 9px !important;
+    }
+    
+    .collaboration-map circle {
+        r: 4 !important;
+    }
 }
 
 /* Responsive Design */
