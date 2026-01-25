@@ -1,262 +1,364 @@
-// Static SVG Collaboration Map with Curved Lines - Using D3.js for accurate world map
+// Interactive Network Graph for Collaborations
 document.addEventListener('DOMContentLoaded', function() {
-    // SVG viewBox dimensions
-    const svgWidth = 1200;
-    const svgHeight = 600;
-    
-    // Custom projection that gives higher resolution to the US
-    function latLngToSVG(lat, lng) {
-        // For US locations, use a more detailed projection
-        // US roughly spans: lat 25-50, lng -125 to -65
-        
-        // Check if location is in US (rough bounds)
-        const isUS = lng >= -125 && lng <= -65 && lat >= 25 && lat <= 50;
-        
-        if (isUS) {
-            // US-focused projection: more space for US with better spread
-            // US gets about 70% of the width for better spacing
-            const usWidth = svgWidth * 0.70;
-            const usStartX = svgWidth * 0.05; // Start at 5% from left
-            // Add more spread by using a wider range
-            const lngRange = 60; // -125 to -65
-            const lngOffset = lng + 125; // Normalize to 0-60
-            // Use a non-linear scaling to spread out clustered areas more
-            // Apply a slight expansion for better readability
-            const x = usStartX + (lngOffset / lngRange) * usWidth;
-            // For Y, use more of the height and add more vertical spread
-            const latRange = 25; // 25 to 50
-            const latOffset = lat - 25; // Normalize to 0-25
-            // Use more vertical space (75% of height) for better spread
-            const y = (svgHeight * 0.12) + ((latRange - latOffset) / latRange) * (svgHeight * 0.75);
-            return { x, y };
-        } else {
-            // International locations: use remaining space
-            // International gets 30% of width (right side)
-            const intWidth = svgWidth * 0.3;
-            const intStartX = svgWidth * 0.7;
-            
-            // Map international locations to the right side
-            // Europe/Asia: roughly lng -10 to 140
-            let x;
-            if (lng < 0) {
-                // Europe/Western locations
-                x = intStartX + ((lng + 10) / 10) * (intWidth * 0.3); // -10 to 0
-            } else {
-                // Asia/Eastern locations
-                x = intStartX + (intWidth * 0.3) + ((lng) / 140) * (intWidth * 0.7); // 0 to 140
-            }
-            
-            const y = ((90 - lat) / 180) * svgHeight;
-            return { x, y };
-        }
-    }
-    
-    // Minneapolis coordinates
-    const minneapolis = { lat: 44.9778, lng: -93.2650 };
-    const minneapolisSVG = latLngToSVG(minneapolis.lat, minneapolis.lng);
-    
-    // Collaboration locations
-    const collaborations = [
-        { name: 'China Mainland', lat: 39.9042, lng: 116.4074, type: 'international' },
-        { name: 'Taiwan', lat: 25.0330, lng: 121.5654, type: 'international' },
-        { name: 'Spain', lat: 40.4168, lng: -3.7038, type: 'international' },
-        { name: 'Germany', lat: 52.5200, lng: 13.4050, type: 'international' },
-        { name: 'Hong Kong', lat: 22.3193, lng: 114.1694, type: 'international' },
-        { name: 'Arkansas', lat: 34.7465, lng: -92.2896, type: 'national' },
-        { name: 'Indiana', lat: 39.7684, lng: -86.1581, type: 'national' },
-        { name: 'Washington DC', lat: 38.9072, lng: -77.0369, type: 'national' },
-        { name: 'Alabama', lat: 32.3617, lng: -86.2791, type: 'national' },
-        { name: 'North Carolina', lat: 35.7796, lng: -78.6382, type: 'national' },
-        { name: 'New York', lat: 40.7128, lng: -74.0060, type: 'national' },
-        { name: 'Georgia', lat: 33.7490, lng: -84.3880, type: 'national' },
-        { name: 'Texas', lat: 30.2672, lng: -97.7431, type: 'national' },
-        { name: 'Washington', lat: 47.6062, lng: -122.3321, type: 'national' },
-        { name: 'Michigan', lat: 42.3314, lng: -83.0458, type: 'national' },
-        { name: 'New Jersey', lat: 40.2206, lng: -74.7597, type: 'national' },
-        { name: 'Arizona', lat: 33.4484, lng: -112.0740, type: 'national' },
-        { name: 'Maryland', lat: 39.0458, lng: -76.6413, type: 'national' },
-        { name: 'Virginia', lat: 37.5407, lng: -77.4360, type: 'national' },
-        { name: 'Illinois', lat: 39.7983, lng: -89.6441, type: 'national' }
-    ];
-    
-    const svg = document.getElementById('collaborationMap');
-    const connectionsGroup = document.getElementById('connections');
-    const markersGroup = document.getElementById('markers');
-    
-    if (!svg || !connectionsGroup || !markersGroup) {
-        console.error('SVG elements not found');
+    const svg = d3.select('#collaborationMap');
+    if (svg.empty()) {
+        console.error('SVG element not found');
         return;
     }
     
-    // Draw curved lines from Minneapolis to each location
+    // Get container dimensions
+    const container = document.querySelector('.collaboration-map-container');
+    const width = container ? container.clientWidth - 40 : 1200;
+    const height = 500;
+    
+    // Set SVG dimensions
+    svg.attr('width', width)
+       .attr('height', height)
+       .attr('viewBox', `0 0 ${width} ${height}`);
+    
+    // Collaboration data with weights, institutions, and countries
+    const collaborations = [
+        { weight: 4, institution: 'Jiangxi Normal University', country: 'China Mainland' },
+        { weight: 1, institution: 'Zhejiang Normal University', country: 'China Mainland' },
+        { weight: 3, institution: 'Peking University', country: 'China Mainland' },
+        { weight: 1, institution: 'Tsinghua University', country: 'China Mainland' },
+        { weight: 1, institution: 'Hefei University of Technology', country: 'China Mainland' },
+        { weight: 1, institution: 'Beijing Normal University', country: 'China Mainland' },
+        { weight: 1, institution: 'TU Dortmund University', country: 'Germany' },
+        { weight: 1, institution: 'Leibniz Institute for Science and Mathematics Education', country: 'Germany' },
+        { weight: 1, institution: 'Centre for International Student Assessment', country: 'Germany' },
+        { weight: 10, institution: 'The University of Hong Kong', country: 'Hong Kong' },
+        { weight: 1, institution: 'The Islamic Azad University', country: 'Iran' },
+        { weight: 3, institution: 'Universidad Autónoma de Madrid', country: 'Spain' },
+        { weight: 2, institution: 'Universidad Pontificia Comillas', country: 'Spain' },
+        { weight: 1, institution: 'National University of Tainan', country: 'Taiwan' },
+        { weight: 1, institution: 'Harran University', country: 'Turkey' },
+        { weight: 3, institution: 'University of Michigan', country: 'United States' },
+        { weight: 2, institution: 'University of Arkansas', country: 'United States' },
+        { weight: 5, institution: 'University of Georgia', country: 'United States' },
+        { weight: 1, institution: 'American Institutes for Research (AIR)', country: 'United States' },
+        { weight: 1, institution: 'Columbia University', country: 'United States' },
+        { weight: 1, institution: 'National Board of Osteopathic Medical Examiners', country: 'United States' },
+        { weight: 10, institution: 'University of Alabama', country: 'United States' },
+        { weight: 1, institution: 'Athens State University', country: 'United States' },
+        { weight: 1, institution: 'University of New Mexico', country: 'United States' },
+        { weight: 1, institution: 'College Board', country: 'United States' },
+        { weight: 1, institution: 'University of Virginia', country: 'United States' },
+        { weight: 1, institution: 'University of North Texas Health Science', country: 'United States' },
+        { weight: 1, institution: 'University of Washington', country: 'United States' },
+        { weight: 1, institution: 'Michigan State University', country: 'United States' },
+        { weight: 1, institution: 'University of Illinois at Urbana-Champaign', country: 'United States' },
+        { weight: 1, institution: 'University of South Carolina', country: 'United States' },
+        { weight: 1, institution: 'University of California Merced', country: 'United States' },
+        { weight: 1, institution: 'University of Maryland', country: 'United States' },
+        { weight: 1, institution: 'Pearson', country: 'United States' },
+        { weight: 1, institution: 'Rutgers University', country: 'United States' },
+        { weight: 1, institution: 'Texas State University', country: 'United States' },
+        { weight: 2, institution: 'Georgetown University', country: 'United States' },
+        { weight: 2, institution: 'University of Illinois at Chicago', country: 'United States' },
+        { weight: 1, institution: 'Washington State University', country: 'United States' },
+        { weight: 1, institution: 'Florida Atlantic University', country: 'United States' }
+    ];
+    
+    // Determine type (international vs national) based on country
     collaborations.forEach(collab => {
-        const targetSVG = latLngToSVG(collab.lat, collab.lng);
-        const color = collab.type === 'international' ? '#FFD700' : '#8C1D40';
-        const strokeWidth = collab.type === 'international' ? 2.5 : 2;
-        
-        // Calculate control point for curved line (bezier curve)
-        const midX = (minneapolisSVG.x + targetSVG.x) / 2;
-        const midY = (minneapolisSVG.y + targetSVG.y) / 2;
-        
-        // Create a curved arc by offsetting the midpoint
-        const distance = Math.sqrt(
-            Math.pow(targetSVG.x - minneapolisSVG.x, 2) + 
-            Math.pow(targetSVG.y - minneapolisSVG.y, 2)
-        );
-        const curvature = distance * 0.4; // Adjust curvature amount
-        
-        // Determine curve direction based on relative positions
-        const dx = targetSVG.x - minneapolisSVG.x;
-        const direction = dx > 0 ? -1 : 1;
-        const controlY = midY + (direction * curvature);
-        
-        // Create curved path using quadratic bezier
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const pathData = `M ${minneapolisSVG.x} ${minneapolisSVG.y} Q ${midX} ${controlY} ${targetSVG.x} ${targetSVG.y}`;
-        path.setAttribute('d', pathData);
-        path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', strokeWidth);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('opacity', '0.7');
-        path.setAttribute('stroke-dasharray', '6,4');
-        connectionsGroup.appendChild(path);
-        
-        // Add marker circle at destination
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', targetSVG.x);
-        circle.setAttribute('cy', targetSVG.y);
-        circle.setAttribute('r', collab.type === 'international' ? '7' : '6');
-        circle.setAttribute('fill', color);
-        circle.setAttribute('stroke', 'white');
-        circle.setAttribute('stroke-width', '2.5');
-        markersGroup.appendChild(circle);
-        
-        // Store position for overlap detection
-        collab.svgX = targetSVG.x;
-        collab.svgY = targetSVG.y;
-        
-        // Add hover effects to circle
-        circle.setAttribute('class', 'collaboration-marker');
-        circle.setAttribute('data-location', collab.name);
-        circle.style.cursor = 'pointer';
-        
-        // Hover effect - slightly enlarge marker
-        circle.addEventListener('mouseenter', function() {
-            circle.setAttribute('r', (collab.type === 'international' ? '9' : '8'));
-        });
-        
-        circle.addEventListener('mouseleave', function() {
-            circle.setAttribute('r', (collab.type === 'international' ? '7' : '6'));
+        collab.type = collab.country === 'United States' ? 'national' : 'international';
+        collab.id = collab.institution.replace(/\s+/g, '_'); // Create unique ID
+    });
+    
+    // Create nodes: Minneapolis (center) + all collaborations
+    const nodes = [
+        { id: 'Minneapolis', name: 'Minneapolis, MN', institution: 'University of Minnesota', country: 'United States', type: 'center', x: 0, y: 0, fixed: true, fx: 0, fy: 0 }
+    ];
+    
+    collaborations.forEach(collab => {
+        // Initialize nodes in a circle around center
+        const angle = (Math.random() * 2 * Math.PI);
+        const radius = Math.min(width, height) * 0.25 + Math.random() * 50;
+        nodes.push({
+            id: collab.id,
+            name: collab.institution,
+            institution: collab.institution,
+            country: collab.country,
+            type: collab.type,
+            weight: collab.weight,
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius
         });
     });
     
-    // Function to find optimal label position to avoid overlaps
-    function findLabelPosition(x, y, existingLabels, labelText) {
-        const minDistance = 50; // Minimum distance between labels
-        const offsets = [
-            { x: 0, y: -20, anchor: 'middle' },  // Above
-            { x: 25, y: 0, anchor: 'start' },     // Right
-            { x: -25, y: 0, anchor: 'end' },     // Left
-            { x: 0, y: 20, anchor: 'middle' },   // Below
-            { x: 30, y: -15, anchor: 'start' },  // Top-right
-            { x: -30, y: -15, anchor: 'end' },    // Top-left
-            { x: 30, y: 15, anchor: 'start' },   // Bottom-right
-            { x: -30, y: 15, anchor: 'end' }     // Bottom-left
-        ];
+    // Create links: all connections from Minneapolis with weights
+    const links = collaborations.map(collab => ({
+        source: 'Minneapolis',
+        target: collab.id,
+        type: collab.type,
+        weight: collab.weight
+    }));
+    
+    // Create D3 force simulation (centered at 0,0 since we're using centered transform)
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(d => 100 + d.weight * 10))
+        .force('charge', d3.forceManyBody().strength(-400))
+        .force('center', d3.forceCenter(0, 0))
+        .force('collision', d3.forceCollide().radius(40));
+    
+    // Create SVG container - center the graph
+    const g = d3.select('#collaborationMap')
+        .append('g')
+        .attr('transform', `translate(${width/2},${height/2})`);
+    
+    // Create tooltip
+    const tooltip = d3.select('body').append('div')
+        .attr('class', 'network-tooltip')
+        .style('opacity', 0)
+        .style('position', 'absolute')
+        .style('background', 'rgba(0, 0, 0, 0.85)')
+        .style('color', 'white')
+        .style('padding', '10px 14px')
+        .style('border-radius', '6px')
+        .style('font-size', '13px')
+        .style('pointer-events', 'none')
+        .style('z-index', '1000')
+        .style('max-width', '300px')
+        .style('line-height', '1.5');
+    
+    // Draw links with weight-based line width
+    const link = g.append('g')
+        .attr('class', 'links')
+        .selectAll('line')
+        .data(links)
+        .enter().append('line')
+        .attr('stroke', d => d.type === 'international' ? '#FFD700' : '#8C1D40')
+        .attr('stroke-width', d => Math.max(1, Math.min(8, d.weight * 0.8))) // Scale weight to line width
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-dasharray', '5,5');
+    
+    // Draw nodes - separate center node (panda) from other nodes
+    const nodeGroup = g.append('g')
+        .attr('class', 'nodes');
+    
+    // Draw panda image for Minneapolis (center node)
+    const centerNode = nodes.find(n => n.type === 'center');
+    const pandaImage = nodeGroup.append('g')
+        .attr('class', 'panda-node')
+        .datum(centerNode)
+        .attr('transform', `translate(${centerNode.x},${centerNode.y})`);
+    
+    // Add a subtle glow/shadow circle behind panda
+    pandaImage.append('circle')
+        .attr('r', 22)
+        .attr('fill', '#FFD700')
+        .attr('opacity', 0.3);
+    
+    const pandaImg = pandaImage.append('image')
+        .attr('href', 'assets/images/panda-logo.svg')
+        .attr('x', -20)
+        .attr('y', -20)
+        .attr('width', 40)
+        .attr('height', 40)
+        .style('cursor', 'pointer')
+        .style('transition', 'transform 0.2s ease');
+    
+    // Draw other nodes as circles
+    const otherNodes = nodes.filter(n => n.type !== 'center');
+    const node = nodeGroup.selectAll('circle.node')
+        .data(otherNodes)
+        .enter().append('circle')
+        .attr('class', 'node')
+        .attr('r', d => {
+            // Scale node size based on weight
+            return d.weight ? Math.max(6, Math.min(14, 6 + d.weight * 0.6)) : (d.type === 'international' ? 10 : 8);
+        })
+        .attr('fill', d => d.type === 'international' ? '#FFD700' : '#8C1D40')
+        .attr('stroke', 'white')
+        .attr('stroke-width', 2.5)
+        .style('cursor', 'pointer')
+        .call(drag(simulation));
+    
+    // Make panda draggable (but it will stay fixed)
+    pandaImage.call(drag(simulation));
+    
+    // Add labels showing institution and country
+    const labelGroup = g.append('g')
+        .attr('class', 'labels')
+        .selectAll('g')
+        .data(nodes)
+        .enter().append('g')
+        .attr('transform', d => `translate(${d.x},${d.y})`);
+    
+    // Institution name (first line) - skip center node (panda replaces it)
+    labelGroup.filter(d => d.type !== 'center')
+        .append('text')
+        .attr('dx', 0)
+        .attr('dy', -18)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '10')
+        .attr('font-weight', 'bold')
+        .attr('fill', d => d.type === 'international' ? '#FFD700' : '#8C1D40')
+        .attr('font-family', 'Arial, sans-serif')
+        .text(d => {
+            // Truncate long institution names
+            const name = d.institution.length > 30 ? d.institution.substring(0, 27) + '...' : d.institution;
+            return name;
+        })
+        .style('pointer-events', 'none')
+        .style('text-shadow', '1px 1px 2px rgba(255, 255, 255, 0.9)');
+    
+    // Country name (second line, only for collaboration nodes)
+    labelGroup.filter(d => d.type !== 'center')
+        .append('text')
+        .attr('dx', 0)
+        .attr('dy', -5)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '9')
+        .attr('font-weight', 'normal')
+        .attr('fill', d => d.type === 'international' ? '#FFD700' : '#8C1D40')
+        .attr('font-family', 'Arial, sans-serif')
+        .attr('opacity', 0.8)
+        .text(d => d.country)
+        .style('pointer-events', 'none')
+        .style('text-shadow', '1px 1px 2px rgba(255, 255, 255, 0.9)');
+    
+    // Mouse position tracking for interactive movement
+    let mouseX = 0;
+    let mouseY = 0;
+    
+    // Add mouse move interaction to the SVG
+    svg.on('mousemove', function(event) {
+        const [x, y] = d3.pointer(event, g.node());
+        mouseX = x;
+        mouseY = y;
         
-        for (let offset of offsets) {
-            const testX = x + offset.x;
-            const testY = y + offset.y;
-            let tooClose = false;
-            
-            // Check distance from existing labels
-            for (let existing of existingLabels) {
-                const distance = Math.sqrt(
-                    Math.pow(testX - existing.x, 2) + Math.pow(testY - existing.y, 2)
-                );
+        // Add repulsion force from mouse position
+        nodes.forEach(n => {
+            if (n.type !== 'center') {
+                const dx = n.x - mouseX;
+                const dy = n.y - mouseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDistance = 80;
+                
                 if (distance < minDistance) {
-                    tooClose = true;
-                    break;
+                    const force = (minDistance - distance) / minDistance * 5;
+                    n.vx = (n.vx || 0) + (dx / distance) * force;
+                    n.vy = (n.vy || 0) + (dy / distance) * force;
                 }
             }
-            
-            if (!tooClose) {
-                return { x: testX, y: testY, anchor: offset.anchor };
+        });
+        
+        simulation.alpha(0.3).restart();
+    });
+    
+    // Add hover effects for regular nodes
+    node.on('mouseover', function(event, d) {
+        tooltip.transition()
+            .duration(200)
+            .style('opacity', 1);
+        
+        const tooltipContent = `<strong>${d.institution}</strong><br>${d.country}`;
+        
+        tooltip.html(tooltipContent)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 10) + 'px');
+        
+        // Highlight connected nodes
+        const connectedIds = new Set([d.id]);
+        links.forEach(l => {
+            if (l.source.id === d.id || l.target.id === d.id) {
+                connectedIds.add(l.source.id === d.id ? l.target.id : l.source.id);
+            }
+        });
+        
+        node.style('opacity', n => connectedIds.has(n.id) ? 1 : 0.2);
+        link.style('opacity', l => 
+            (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.1
+        );
+        labelGroup.style('opacity', n => connectedIds.has(n.id) ? 1 : 0.2);
+        pandaImage.style('opacity', connectedIds.has('Minneapolis') ? 1 : 0.2);
+        pandaImg.style('transform', connectedIds.has('Minneapolis') ? 'scale(1.1)' : 'scale(1)');
+    })
+    .on('mouseout', function() {
+        tooltip.transition()
+            .duration(200)
+            .style('opacity', 0);
+        
+        node.style('opacity', 1);
+        link.style('opacity', 0.6);
+        labelGroup.style('opacity', 1);
+        pandaImage.style('opacity', 1);
+    });
+    
+    // Add hover effects for panda
+    pandaImage.on('mouseover', function(event, d) {
+        tooltip.transition()
+            .duration(200)
+            .style('opacity', 1);
+        
+        const tooltipContent = `<strong>${d.institution}</strong><br>${d.country}`;
+        
+        tooltip.html(tooltipContent)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 10) + 'px');
+        
+        // Highlight all connected nodes (all nodes are connected to Minneapolis)
+        node.style('opacity', 1);
+        link.style('opacity', 0.9);
+        labelGroup.style('opacity', 1);
+        pandaImg.style('transform', 'scale(1.1)');
+    })
+    .on('mouseout', function() {
+        tooltip.transition()
+            .duration(200)
+            .style('opacity', 0);
+        
+        node.style('opacity', 1);
+        link.style('opacity', 0.6);
+        labelGroup.style('opacity', 1);
+        pandaImg.style('transform', 'scale(1)');
+    });
+    
+    // Update positions on simulation tick
+    simulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+        
+        node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+        
+        // Update panda position
+        pandaImage.attr('transform', d => `translate(${d.x},${d.y})`);
+        
+        labelGroup
+            .attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+    
+    // Drag function
+    function drag(simulation) {
+        function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }
+        
+        function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }
+        
+        function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            if (event.subject.type !== 'center') {
+                event.subject.fx = null;
+                event.subject.fy = null;
             }
         }
         
-        // If all positions are too close, use the first offset anyway
-        return { x: x + offsets[0].x, y: y + offsets[0].y, anchor: offsets[0].anchor };
+        return d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended);
     }
-    
-    // Store all label positions
-    const labelPositions = [];
-    
-    // Add Minneapolis marker (larger, different style)
-    const minneapolisCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    minneapolisCircle.setAttribute('cx', minneapolisSVG.x);
-    minneapolisCircle.setAttribute('cy', minneapolisSVG.y);
-    minneapolisCircle.setAttribute('r', '10');
-    minneapolisCircle.setAttribute('fill', '#8C1D40');
-    minneapolisCircle.setAttribute('stroke', '#FFD700');
-    minneapolisCircle.setAttribute('stroke-width', '4');
-    minneapolisCircle.setAttribute('class', 'collaboration-marker');
-    minneapolisCircle.style.cursor = 'pointer';
-    markersGroup.appendChild(minneapolisCircle);
-    
-    // Add inner circle for Minneapolis
-    const minneapolisInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    minneapolisInner.setAttribute('cx', minneapolisSVG.x);
-    minneapolisInner.setAttribute('cy', minneapolisSVG.y);
-    minneapolisInner.setAttribute('r', '5');
-    minneapolisInner.setAttribute('fill', '#FFD700');
-    markersGroup.appendChild(minneapolisInner);
-    
-    // Add Minneapolis label with smart positioning
-    const minneapolisLabelPos = findLabelPosition(minneapolisSVG.x, minneapolisSVG.y, labelPositions, 'Minneapolis, MN');
-    labelPositions.push({ x: minneapolisLabelPos.x, y: minneapolisLabelPos.y });
-    
-    const minneapolisText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    minneapolisText.setAttribute('x', minneapolisLabelPos.x);
-    minneapolisText.setAttribute('y', minneapolisLabelPos.y);
-    minneapolisText.setAttribute('text-anchor', minneapolisLabelPos.anchor);
-    minneapolisText.setAttribute('font-size', '13');
-    minneapolisText.setAttribute('font-weight', 'bold');
-    minneapolisText.setAttribute('fill', '#8C1D40');
-    minneapolisText.setAttribute('font-family', 'Arial, sans-serif');
-    minneapolisText.setAttribute('class', 'location-label');
-    minneapolisText.textContent = 'Minneapolis, MN';
-    markersGroup.appendChild(minneapolisText);
-    
-    // Hover effect for Minneapolis
-    minneapolisCircle.addEventListener('mouseenter', function() {
-        minneapolisCircle.setAttribute('r', '12');
-    });
-    
-    minneapolisCircle.addEventListener('mouseleave', function() {
-        minneapolisCircle.setAttribute('r', '10');
-    });
-    
-    // Now add labels for all collaboration locations
-    collaborations.forEach(collab => {
-        const targetSVG = { x: collab.svgX, y: collab.svgY };
-        const color = collab.type === 'international' ? '#FFD700' : '#8C1D40';
-        
-        // Find optimal label position
-        const labelPos = findLabelPosition(targetSVG.x, targetSVG.y, labelPositions, collab.name);
-        labelPositions.push({ x: labelPos.x, y: labelPos.y });
-        
-        // Add location label
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', labelPos.x);
-        text.setAttribute('y', labelPos.y);
-        text.setAttribute('text-anchor', labelPos.anchor);
-        text.setAttribute('font-size', '11');
-        text.setAttribute('font-weight', 'bold');
-        text.setAttribute('fill', color);
-        text.setAttribute('font-family', 'Arial, sans-serif');
-        text.setAttribute('class', 'location-label');
-        text.textContent = collab.name;
-        markersGroup.appendChild(text);
-    });
 });
