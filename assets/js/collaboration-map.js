@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .attr('opacity', 0.3);
     
     const pandaImg = pandaImage.append('image')
-        .attr('href', 'assets/images/panda-logo.svg')
+        .attr('href', 'assets/images/panda-logo.png')
         .attr('x', -20)
         .attr('y', -20)
         .attr('width', 40)
