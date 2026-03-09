@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 /* Global Styles */
 :root {
     --umn-maroon: #8C1D40;
@@ -8,18 +10,27 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     padding-top: 76px;
 }
 
 /* Hero Section */
 .hero-section {
-    background: linear-gradient(rgba(140, 29, 64, 0.9), rgba(140, 29, 64, 0.9)), url('https://source.unsplash.com/1600x900/?psychometrics');
-    background-size: cover;
-    background-position: center;
+    position: relative;
+    background: linear-gradient(135deg, var(--umn-dark-maroon) 0%, var(--umn-maroon) 60%, var(--umn-light-maroon) 100%);
     color: white;
     padding: 60px 0;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255, 215, 0, 0.12) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
 }
 
 .panda-highlight {
@@ -31,14 +42,15 @@ body {
 
 /* Cards */
 .card {
-    transition: transform 0.3s ease;
-    border: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 }
 
 .card:hover {
     transform: translateY(-5px);
-    border: 2px solid var(--umn-gold);
+    border-color: var(--umn-maroon) !important;
+    box-shadow: 0 8px 24px rgba(140, 29, 64, 0.18) !important;
 }
 
 /* Team Section */
@@ -112,20 +124,50 @@ footer a:hover {
 .btn-primary {
     background-color: var(--umn-gold) !important;
     border-color: var(--umn-gold) !important;
+    color: var(--umn-dark-maroon) !important;
+    font-weight: 600;
 }
 
 .btn-primary:hover {
     background-color: var(--umn-dark-maroon) !important;
     border-color: var(--umn-dark-maroon) !important;
+    color: white !important;
 }
 
-/* Cards */
-.card {
-    border: 1px solid var(--umn-light-maroon);
+.btn-outline-primary {
+    color: var(--umn-maroon) !important;
+    border-color: var(--umn-maroon) !important;
 }
 
-.card:hover {
-    border-color: var(--umn-gold);
+.btn-outline-primary:hover {
+    background-color: var(--umn-maroon) !important;
+    color: white !important;
+}
+
+/* Paper Highlights */
+.paper-highlight {
+    border-left: 4px solid var(--umn-maroon) !important;
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.paper-highlight .paper-title {
+    font-weight: 600;
+    color: var(--umn-dark-maroon);
+    line-height: 1.4;
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+}
+
+.paper-highlight .paper-authors {
+    font-size: 0.875rem;
+    color: #444;
+    margin-bottom: 0.15rem;
+}
+
+.paper-highlight .paper-venue {
+    font-size: 0.85rem;
+    color: #777;
+    margin-bottom: 0.75rem;
 }
 
 /* Publications */
@@ -193,18 +235,44 @@ footer a:hover {
 }
 
 .network-tooltip {
-    font-family: Arial, sans-serif;
+    font-family: 'Inter', Arial, sans-serif;
 }
 
-@media (max-width: 768px) {
-    .collaboration-map {
-        height: 400px;
-        min-height: 350px;
-    }
-    
-    .collaboration-map .labels text {
-        font-size: 9px !important;
-    }
+/* News Section */
+.news-photo {
+    height: 220px;
+    background-color: var(--umn-light-maroon);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 0.375rem 0.375rem 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 2rem;
+}
+
+.news-card {
+    overflow: hidden;
+}
+
+.news-card .card-body {
+    padding: 1.1rem;
+}
+
+.news-date {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--umn-maroon);
+}
+
+/* Section headings */
+h2 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 /* Responsive Design */
@@ -212,9 +280,18 @@ footer a:hover {
     .hero-section {
         padding: 50px 0;
     }
-    
+
     .card {
         margin-bottom: 20px;
+    }
+
+    .collaboration-map {
+        height: 400px;
+        min-height: 350px;
+    }
+
+    .collaboration-map .labels text {
+        font-size: 9px !important;
     }
 }
 
