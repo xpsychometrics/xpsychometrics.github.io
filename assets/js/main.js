@@ -9,17 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Contact form submission
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            // Here you would typically send the form data to a server
-            alert('Thank you for your message! We will get back to you soon.');
-            contactForm.reset();
-        });
-    }
-
     // Add fade-in animation to sections as they come into view
     const sections = document.querySelectorAll('section');
     const observer = new IntersectionObserver((entries) => {
